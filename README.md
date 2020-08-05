@@ -1,2 +1,3 @@
 # boun01-ramazaneraslan
-boun01-ramazaneraslan created by GitHub Classroom
+
+Progress journal of Ramazan Eraslan
