@@ -1,0 +1,20 @@
+---
+title: "Assignment 1/ RMD"
+author: "Ramazan Eraslan"
+date: "8/4/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## About me
+I am a senior industrial engineering student at Bogazici University. I am interested in data science and wanting to start my career in this field.
+
+You can see my Linked-in profile from [here](https://www.linkedin.com/in/ramazan-eraslan-0a7a9b105/)
+
+
+
