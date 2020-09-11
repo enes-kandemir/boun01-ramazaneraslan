@@ -1,0 +1,104 @@
+---
+title: "Analysis the Prices of Energy Exchange of Turkey"
+author: "Ramazan Eraslan"
+date: "8/13/2020"
+output: 
+    html_document:
+      toc: true
+      toc_float: true
+      toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Introduction
+This report aims to analyze the prices of Energy Exchange of Turkey via using R programming language. Dplyr and ggplot2 packages were used for this aim.To get more information about these packages you can visit the [tidyverse.org](https://www.tidyverse.org/). You can reach the data from [here](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml).
+
+## Required Libraries
+```{r,message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(readxl)
+
+```
+## Reading the Data
+```{r,message=FALSE}
+ptf_smf_data<-read_excel("ptf-smf.xls")
+data<- ptf_smf_data%>%
+mutate(Date=as_datetime(dmy_hm(Date)),MCP=as.numeric(MCP),SMP=as.numeric(SMP),`Positive Imbalance Price (TL/MWh)`=as.numeric(`Positive Imbalance Price (TL/MWh)`),`Negative Imbalance Price (TL/MWh)`=as.numeric(`Negative Imbalance Price (TL/MWh)`))
+
+```
+
+## Dataset
+```{r}
+glimpse(data)
+```
+
+## Summary of the Dataset
+
+```{r}
+summary(data)
+```
+
+
+
+## Graphs
+
+**1. SMP Direction Pie Chart**
+
+```{r}
+
+deficit_or_surplus<-data%>%
+  count(`SMP Direction`)
+deficit_or_surplus
+ggplot(deficit_or_surplus,aes(x="",y=n,fill=`SMP Direction`))+geom_bar(stat = "identity")+coord_polar("y",start=0)+theme(axis.title.x = element_blank(),axis.title.y = element_blank())+ggtitle("SMP Directions")
+
+
+```
+
+SMP Directions show that there is an energy deficit around 70% of time intervals. That means energy consumption is higher generally than the forecast. 
+
+**2. Line Plots for Average Prices**
+
+
+```{r}
+by_day<- data%>%
+  group_by(day=day(Date)) %>%
+   summarise(average_MCP=mean(MCP),average_SMP=mean(SMP),average_PIP=mean(`Positive Imbalance Price (TL/MWh)`),average_NIP=mean(`Negative Imbalance Price (TL/MWh)`))
+
+ggplot(by_day,aes(x=day,y=average_MCP))+geom_line()+ggtitle("Average Daily Market Clearing Price")
+
+ggplot(by_day,aes(x=day,y=average_SMP))+geom_line()+ggtitle("Average Daily System Marginal Price")
+
+ggplot(by_day,aes(x=day,y=average_PIP))+geom_line()+ggtitle("Average Daily Positive Imbalance Price")
+
+ggplot(by_day,aes(x=day,y=average_NIP))+geom_line()+ggtitle("Average Daily Negative Imbalance Price")
+```
+
+Average price plots show that the prices fluctuate over time. However, at the end of the month, prices were lower than the beginning prices.
+```{r}
+ggplot(by_day)+geom_line(aes(x=day,y=average_MCP,color="average_MCP"))+geom_line(aes(x=day,y=average_SMP,color="average_SMP"))+labs(x="Day",y="Average MCP and SMP")+ ggtitle("Average Daily MCP vs Average Daily SMP")
+
+```
+
+"Average Daily MCP vs Average Daily MCP" graph shows taht Market Clearing Prices(MCP) are more stable than the System Marginal Prices(SMP). Since MCP values are determined one day before, they are more stable. However SMP values are determined during the day and it fluactes due to energy defecits or energy surplus. SMP is higher than MCP when there is an energy defecit and lower when there is an energy surplus.
+
+```{r}
+ggplot(by_day)+geom_line(aes(x=day,y=average_PIP,color="average_PIP"))+geom_line(aes(x=day,y=average_NIP,color="average_NIP"))+labs(x="Day",y="Average PIP and NIP")+ ggtitle("Average Daily PIP vs Average Daily NIP")
+```
+
+"Average Daily PIP vs Average Daily NIP" graph shows that Negative Imbalance Prices(NIP) are always higher than the Positive Imbalance Prices(PIP). This means energy deficit is penalized more severly than the energy surplus.
+
+
+
+
+
+
+## References
+
+1. [https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml](https://rapor.epias.com.tr/rapor/xhtml/ptfSmfListeleme.xhtml)
+
+2. [https://www.tidyverse.org/](https://www.tidyverse.org/)
+
+
