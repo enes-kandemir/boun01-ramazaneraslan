@@ -1,0 +1,128 @@
+---
+title: "Diamond Price Estimations"
+author: "Ramazan Eraslan"
+date: "9/10/2020"
+output: 
+    html_document:
+      toc: true
+      toc_float: true
+      toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message = FALSE,warning = FALSE)
+```
+## Introduction
+This report aims to analyze the certain aspects of the `diamonds` dateset in ggplot2 package and make price estimation for diamonds via using Classification and Regression Tree (CART) method.
+
+## Loading Required Libraries
+
+```{r}
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+library(Metrics)
+```
+
+## Exploratory Data Analysis
+
+```{r}
+summary(diamonds)
+```
+
+
+
+```{r}
+ggplot(diamonds,aes(x=carat,y=price,color=color))+geom_point()+xlim(c(0,3))+facet_wrap(clarity~.)+ggtitle("'Price vs Carat Plot' for Different  Colors and Clarities")
+
+```
+
+This plot shows that price and carat of a diamond are directly proportional. Diamonds with the color denoted by D, have relatively low carat.On the other hand, diamonds with the color denoted by J,generally have high carat. Plots also show that, price of a diamond with color D is higher than the diamonds with other colors, when their carats are the same.
+
+```{r}
+
+ggplot(diamonds,aes(x=cut,fill=color))+geom_bar(position = "dodge")+ggtitle("Number of Diamaonds According to Their Cut and Color")
+
+```
+
+```{r}
+ggplot(diamonds,aes(x=price))+geom_histogram()+facet_wrap(cut~.)+ggtitle("Number of Diamonds Accoridng to Their Price and Cut")
+```
+
+
+```{r}
+ggplot(diamonds,aes(x=carat,fill=cut))+geom_histogram(position = "dodge")+xlim(c(0,3))+ggtitle("Number of Diamonds Accoridng to Their Carat and Cut")
+```
+
+
+
+
+## Price Estimation with CART
+### Splitting data into train and test datasets
+
+```{r}
+set.seed(503)
+
+diamonds_test <- diamonds %>% mutate(diamond_id = row_number()) %>% 
+    group_by(cut, color, clarity) %>% sample_frac(0.2) %>% ungroup()
+
+diamonds_train <- anti_join(diamonds %>% mutate(diamond_id = row_number()), 
+    diamonds_test, by = "diamond_id")
+```
+
+```{r}
+diamonds_train
+diamonds_test
+```
+
+### Preperation of the data and creating the model
+`diamond_id` column was omitted from both `diamonds_train` and `diamonds_test` datasets in order to create model formula easily. Model was created by `rpart()` function. In the model, `price` is the dependent variable and all other variables are independent variables. Method argument of the `rpart()` function is "anova" because the price variable is numeric rather than class.
+
+```{r}
+diamond_train<-diamonds_train%>%
+  select(-diamond_id)
+diamond_test<-diamonds_test%>%
+  select(-diamond_id)
+  model<-rpart(formula = price~.,data =diamond_train, method = "anova" )
+```
+
+### Decision Tree
+
+```{r}
+rpart.plot(model)
+```
+
+### Evaluating the model
+
+```{r}
+plotcp(model)
+print(model$cptable)
+```
+
+Complexity Parameter(CP) plot and table show that automatic splitting number (6) is the optimum number of splits for this tree, since it minimizes the `xerror` term.
+
+### Predictions
+
+```{r}
+predictions<-predict(model,diamonds_test,type = "vector")
+
+predict_vs_actual<- diamond_test %>%
+  select(price)%>%
+  mutate(prediction=predictions, abs_difference=abs(price-prediction),abs_percentage=abs(price-prediction)/price)
+predict_vs_actual
+
+
+```
+
+### Errors
+
+Root Mean Squared Error (RMSE) and Mean Absolute (MAE) Error terms for predictions:
+
+```{r}
+errors<-c(RMSE=Metrics::rmse(actual = diamond_test$price,predicted = predictions),MAE=
+Metrics::mae(actual =diamond_test$price,predicted = predictions ))
+errors
+```
+## References
+1.  [https://www.tidyverse.org/](https://www.tidyverse.org/)
+
